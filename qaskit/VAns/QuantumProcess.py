@@ -3,7 +3,6 @@ from pennylane import numpy as np
 import multiprocessing
 from pennylane._grad import grad as get_gradient
 
-
 multiproc_quantum_processor = None
 
 noise_model = {'noisy': False}
@@ -98,6 +97,7 @@ def quantum_processor(queue_in, queue_out, quantum_device, noise):
             ideal = task_inf.get('ideal', False)
             encode = task_inf.get('encode', [encode_none for _ in range(len(parameters))])
             encode_config = task_inf.get('encode_config', [() for _ in range(len(encode))])
+
             @qml.qnode(ideal_device if ideal else quantum_device)
             def exe_circuit(par):
                 index = 0
@@ -271,8 +271,7 @@ def gradient_measurement(Hamiltonian, circuit_in, encode=None, encode_config=Non
     return grad_mea_multi_proc
 
 
-def gradient_decent_one_step(grad, exp, exp_fun, parameters, fixed_learning_rate=False, learning_rate=10, c=1E-4,
-                             rho=0.618):
+def gradient_decent_one_step(grad, exp, exp_fun, parameters, **kwargs):
     """
     Update the trainable parameters by one step;
     :param grad: Gradient of the cost function;
@@ -285,6 +284,11 @@ def gradient_decent_one_step(grad, exp, exp_fun, parameters, fixed_learning_rate
     :param c: constant of linear search;
     :return: Updated parameters and the number of measurements to find the learning rate.
     """
+
+    fixed_learning_rate = kwargs.get('fixed_learning_rate', False)
+    learning_rate = kwargs.get('learning_rate', 10)
+    c = kwargs.get('c', 1E-4)
+    rho = kwargs.get('rho', 0.618)
 
     if fixed_learning_rate:
         return {'parameters': parameters - learning_rate * grad, 'measurements': 0, 'learning_rate': learning_rate}
@@ -306,7 +310,44 @@ def gradient_decent_one_step(grad, exp, exp_fun, parameters, fixed_learning_rate
             else:
                 alpha = alpha * rho
 
-        return {'parameters': new_par, 'measurements': measurements, 'cost': new_exp, 'learning_rate': alpha}
+        return {'parameters': new_par, 'measurements': measurements, 'cost': new_exp,
+                'learning_rate': alpha, 'recommend_learning_rate': alpha * 2}
+
+
+def optimal_cost_estimation(Hamiltonian, circuit_in, parameters, one_step_optimizer, **kwargs):
+    grad_fn = gradient_measurement(Hamiltonian, circuit_in,
+                                   kwargs.get('encode', None), kwargs.get('encode_config', None))
+    obj_fn = objective_function_measurement(Hamiltonian, circuit_in,
+                                            kwargs.get('encode', None), kwargs.get('encode_config', None),
+                                            kwargs.get('exact', False))
+    stop_threshold = kwargs.get('stop_threshold', 1E-3)
+    iterations = kwargs.get('iterations', 500)
+    reference_cost = kwargs.get('ref_cost', None)
+
+    par = parameters
+    record = []
+    mea_count = 0
+    grad = grad_fn(par)
+    mea_count += len(grad) * 2
+    if reference_cost is not None:
+        obj_val = reference_cost
+    else:
+        obj_val = obj_fn(par)
+        mea_count += 1
+
+    for it in range(iterations):
+        update = one_step_optimizer(grad, obj_val, obj_fn, par, **kwargs)
+        mea_count += update['measurements']
+        par = update['parameters']
+        obj_val = update['cost']
+        record.append({'mea': mea_count, 'obj_val': obj_val})
+        kwargs['learning_rate'] = update.get('recommend_learning_rate', kwargs.get('learning_rate'))
+        if update.get('learning_rate', 1) * np.sqrt(sum(np.power(par, 2))) / len(par) <= stop_threshold:
+            break
+        grad = grad_fn(par)
+        mea_count += len(grad) * 2
+
+    return {'parameters': par, 'measurements': mea_count, 'cost': obj_val, 'detail': record}
 
 
 def adam_one_step(grad, exp, parameters, learning_rate=0.1):

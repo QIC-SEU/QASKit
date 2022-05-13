@@ -1,8 +1,13 @@
 import pennylane as qml
 from pennylane import numpy as np
-from QuantumProcess import objective_function_measurement, gradient_measurement, gradient_decent_one_step
+from QuantumProcess import objective_function_measurement, gradient_measurement, gradient_decent_one_step, \
+    optimal_cost_estimation
 import math
 import re
+
+
+detail_record = []
+cumulative_measure_count = 0
 
 
 def single_qubit_block(qb):
@@ -160,9 +165,18 @@ def simplification(n_qubits,ansatz, parameters):
     return new_ansatz, new_parameters
 
 
-def estimation(ansatz, parameters, optimizer, **kwargs):
-    cost = None
-    trained_parameters = None
+def estimation(ansatz, parameters, one_step_optimizer, **kwargs):
+    global cumulative_measure_count, detail_record
+    Hamiltonian = kwargs['Hamiltonian']
+    result = optimal_cost_estimation(Hamiltonian, ansatz, parameters, one_step_optimizer, **kwargs)
+    record = result['detail']
+
+    for piece in record:
+        cumulative_measure_count += piece['mea']
+        detail_record.append({'mea': cumulative_measure_count, 'cost': piece['cost']})
+
+    cost = result['cost']
+    trained_parameters = result['record']
     return cost, trained_parameters
 
 
