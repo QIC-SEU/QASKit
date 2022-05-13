@@ -2,6 +2,7 @@ import pennylane as qml
 from pennylane import numpy as np
 from QuantumProcess import objective_function_measurement, gradient_measurement, gradient_decent_one_step
 import math
+import re
 
 
 def single_qubit_block(qb):
@@ -136,7 +137,24 @@ def insertion(n_qubits, ansatz, parameters):
     return new_ansatz, new_parameters
 
 
-def simplification(ansatz, parameters):
+def simplification(n_qubits,ansatz, parameters):
+    """
+    Simplifies the circuit according to some rules that preserve the expected value of target hamiltornian.
+    takes help from index_to_symbol (dict) and symbol_to_value (dict).
+    Importantly, it keeps the parameter values of the untouched gates.
+    Works on circuits containing CNOTS, Z-rotations and X-rotations.It applies the following rules:
+    Rules:  1. CNOT just after initializing, it does nothing (if |0> initialization).
+            2. Two consecutive and equal CNOTS compile to identity.
+            3. Rotation around z axis of |0> only adds phase hence leaves invariant <H>. It kills it.
+            4. two equal rotations: add the values.
+            5. Scan for U_3 = Rz Rx Rz, or Rx Rz Rx; if found, abosrb consecutive rz/rx (until a CNOT is found)
+            6. Scan qubits and abosrb rotations  (play with control-qubit of CNOT and rz)
+            7. Scan qubits and absorb rotations if possible (play with target-qubit of CNOT and rx)
+            8. Rz(control) and CNOT(control, target) Rz(control) --> Rz(control) CNOT
+            9. Rx(target) and CNOT(control, target) Rx(target) --> Rx(target) CNOT
+    Finally, if the circuit becomes too short, for example, there're no gates at a given qubit, an Rx(0) is placed.
+    """
+
     new_ansatz = None
     new_parameters = None
     return new_ansatz, new_parameters
