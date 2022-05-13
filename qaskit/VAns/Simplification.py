@@ -408,7 +408,7 @@ def simplification(ansatz, parameters):
 
 
 '''Example: [('ry', 0), ('rz', 1), ('cx', 0, 1)];'''
-lst= [('rz', 0), ('rx', 3),('cx', 0, 1), ('cx', 2, 3),('rx', 0), ('cx', 1, 2),('rz', 1), ('rx', 3), ('rx',2),('rx', 2)]
-lst1= [1,2,3,4,5,6,7]
-a,b = simplification(lst,lst1)
-print(a,b)
+#lst= [('rz', 0), ('rx', 3),('cx', 0, 1), ('cx', 2, 3),('rx', 0), ('cx', 1, 2),('rz', 1), ('rx', 3), ('rx',2),('rx', 2)]
+#lst1= [1,2,3,4,5,6,7]
+#a,b = simplification(lst,lst1)
+#print(a,b)
