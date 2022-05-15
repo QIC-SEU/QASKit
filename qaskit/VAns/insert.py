@@ -1,5 +1,5 @@
 import numpy as np
-import cirq
+
 from VAns import single_qubit_block, double_qubit_block
 
 
@@ -34,8 +34,9 @@ def insertion(ansatz, parameters, block_to_insert, insert_index):
 
 
 class IdInserter:
-    def __init__(self, n_qubits=3, epsilon=0.1, initialization="epsilon", selector_temperature=10):
+    def __init__(self, n_qubits=3, epsilon=0.1, initialization="epsilon", selector_temperature=10,coupling_set={}):
         """
+        Update:add coupling set
         epsilon: perturbation strength
         initialization: how parameters at ientity compilation are perturbated on single-qubit unitary.
                         Options = ["PosNeg", "epsilon"]
@@ -45,7 +46,12 @@ class IdInserter:
         self.epsilon = epsilon
         self.init_params = initialization
         self.selector_temperature = selector_temperature
-        self.qubits = cirq.GridQubit.rect(1, n_qubits)
+        """
+            coupling set
+        """
+        self.coupling=coupling_set
+
+        #self.qubits = cirq.GridQubit.rect(1, n_qubits)
 
     """ function 1:(utils)count cnots"""
 
@@ -65,7 +71,7 @@ class IdInserter:
     """ function 2:(utils)count gates on qubits """
 
     def gate_counter_on_qubits(self, indexed_circuit):
-        ngates = {k: [0, 0] for k in range(len(self.qubits))}
+        ngates = {k: [0, 0] for k in range(self.n_qubits)}
         cnot_num, cnot_ind = self.count_cnots()
         ind1, g = enumerate(indexed_circuit)
         for ind in ind1:
@@ -97,7 +103,6 @@ class IdInserter:
             function that selects qubit according to how many gates are acting on each one in the circuit
         """
         # set selector_temperature
-
         if ngates is None:
             ngates = {}
         if gate_type == "one-qubit":
@@ -109,8 +114,17 @@ class IdInserter:
             gc = np.array(list(ngates.values()))[:, 1] + 1  #### gives the gate population for each qubit
             probs = np.exp(self.selector_temperature * (1 - gc / np.sum(gc))) / np.sum(
                 np.exp(self.selector_temperature * (1 - gc / np.sum(gc))))
-            qubits = np.random.choice(range(self.n_qubits), 2, p=probs, replace=False)
-            return qubits
+            flag=1
+            qubits_out=None
+            while(flag==1):
+                qubits_ = np.random.choice(range(self.n_qubits), 2, p=probs, replace=False)
+                qubits=tuple(qubits_)
+                """try to find whether the random cnot is in the coupling set"""
+                if qubits in self.coupling:
+                    qubits_out=qubits
+                    flag=0
+
+            return qubits_out
         else:
             raise NameError("typo code here.")
 
