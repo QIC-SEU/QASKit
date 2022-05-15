@@ -3,7 +3,7 @@ class QuantumHardwareArchitectureError(Exception):
 
 
 class QuantumHardwareArchitecture:
-    def __init__(self, qubit_num, coupling: set, gate_set: dict):
+    def __init__(self, qubit_num, coupling: set, gate_set: dict, **kwargs):
         self.qubit_num = qubit_num
         self.coupling = coupling.copy()
         self.single_qubit_gate = gate_set['single']

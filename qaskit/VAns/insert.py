@@ -1,22 +1,54 @@
 import numpy as np
 import cirq
-from VAns import single_qubit_block,double_qubit_block
+from VAns import single_qubit_block, double_qubit_block
 
-class IdInserter():
-    def __init__(self, n_qubits=3,epsilon=0.1, initialization="epsilon", selector_temperature=10):
+
+def insertion(ansatz, parameters, block_to_insert, insert_index):
+
+    new_ansatz = []
+    new_parameters = []
+    epsilon = 0.1
+    # block_to_insert, insertion_index = self.choose_block(ansatz)
+    for ind, gate in enumerate(ansatz):
+        """
+        go through the whole ansatz
+        ind is the index of gates 
+        """
+        par_count = 0
+        if ind == insert_index:
+            """add circuit"""
+            new_ansatz.append(block_to_insert)
+            """add parameters: for block single qubit is 3, double is 6"""
+            if len(block_to_insert) == 3:
+                new_parameters.append([np.random.choice([-1., 1.]) * epsilon for oo in range(3)])
+            else:
+                new_parameters.append([np.random.choice([-1., 1.]) * epsilon for oo in range(6)])
+        else:
+            new_ansatz.append(gate)
+            if gate[0] == 'rz' or gate[0] == 'rx':
+                """not new block then add original parameters to new_parameters"""
+                new_parameters.append(parameters[par_count])
+                par_count += 1
+
+    return new_ansatz, new_parameters
+
+
+class IdInserter:
+    def __init__(self, n_qubits=3, epsilon=0.1, initialization="epsilon", selector_temperature=10):
         """
         epsilon: perturbation strength
         initialization: how parameters at ientity compilation are perturbated on single-qubit unitary.
                         Options = ["PosNeg", "epsilon"]
         """
-        super(IdInserter, self).__init__(n_qubits=n_qubits)
-        self.n_qubits=n_qubits
+        # super(IdInserter, self).__init__(n_qubits=n_qubits)
+        self.n_qubits = n_qubits
         self.epsilon = epsilon
         self.init_params = initialization
-        self.selector_temperature=selector_temperature
+        self.selector_temperature = selector_temperature
         self.qubits = cirq.GridQubit.rect(1, n_qubits)
 
     """ function 1:(utils)count cnots"""
+
     def count_cnots(self):
         indexed_cnots = {}
         cnots_index = {}
@@ -57,7 +89,7 @@ class IdInserter():
 
     """function 4:choose target block"""
 
-    def choose_target_bodies(self, ngates={}, gate_type="one-qubit"):
+    def choose_target_bodies(self, ngates=None, gate_type="one-qubit"):
         """
             gate_type: "one-qubit" or "two-qubit"
             ngates: gate_counter_on_qubits
@@ -66,6 +98,8 @@ class IdInserter():
         """
         # set selector_temperature
 
+        if ngates is None:
+            ngates = {}
         if gate_type == "one-qubit":
             gc = np.array(list(ngates.values()))[:, 0] + 1  #### gives the gate population for each qubit
             probs = np.exp(self.selector_temperature * (1 - gc / np.sum(gc))) / np.sum(
@@ -106,49 +140,16 @@ class IdInserter():
 
         return block_to_insert, insertion_index
 
-    def insertion(self,ansatz, parameters,block_to_insert,insert_index):
-
-        new_ansatz = []
-        new_parameters = []
-        epsilon = 0.1
-        #block_to_insert, insertion_index = self.choose_block(ansatz)
-        for ind, gate in enumerate(ansatz):
-            """
-            go through the whole ansatz
-            ind is the index of gates 
-            """
-            par_count = 0
-            if ind == insert_index:
-                """add circuit"""
-                new_ansatz.append(block_to_insert)
-                """add parameters: for block single qubit is 3, double is 6"""
-                if len(block_to_insert) == 3:
-                    new_parameters.append([np.random.choice([-1., 1.]) * epsilon for oo in range(3)])
-                else:
-                    new_parameters.append([np.random.choice([-1., 1.]) * epsilon for oo in range(6)])
-            else:
-                new_ansatz.append(gate)
-                if gate[0] == 'rz' or gate[0] == 'rx':
-                    """not new block then add original parameters to new_parameters"""
-                    new_parameters.append(parameters[par_count])
-                    par_count += 1
-
-        return new_ansatz, new_parameters
-
-
-
     def place_almost_identity(self, indexed_circuit, symbol_to_value):
         block_to_insert, insertion_index = self.choose_block(indexed_circuit)
-        new_ansatz,new_parameters = self.insertion(indexed_circuit, symbol_to_value, block_to_insert, insertion_index)
-        return new_ansatz,new_parameters
+        new_ansatz, new_parameters = insertion(indexed_circuit, symbol_to_value, block_to_insert, insertion_index)
+        return new_ansatz, new_parameters
 
-
-    def place_identities(self,indexed_circuit, symbol_to_value, rate_iids_per_step=1):
+    def place_identities(self, indexed_circuit, symbol_to_value, rate_iids_per_step=1):
         ngates = np.random.exponential(scale=rate_iids_per_step)
-        ngates = int(ngates+1)
-        #print("Adding {}".format(ngates))
+        ngates = int(ngates + 1)
+        # print("Adding {}".format(ngates))
         M_ansatz, M_parameters = self.place_almost_identity(indexed_circuit, symbol_to_value)
-        for ll in range(ngates-1):
+        for ll in range(ngates - 1):
             M_ansatz, M_parameters = self.place_almost_identity(M_ansatz, M_parameters)
         return M_ansatz, M_parameters
-
