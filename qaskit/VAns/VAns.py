@@ -5,6 +5,8 @@ from QuantumProcess import objective_function_measurement, gradient_measurement,
 import math
 from QuantumHardwareArchitecture import QuantumHardwareArchitecture
 from Simplification import simplification
+from insert import IdInserter
+
 
 def single_qubit_block(qb):
     return [('rz', qb), ('rx', qb), ('rz', qb)]
@@ -39,8 +41,8 @@ class VAns:
         self.detail_record = []
         self.cumulative_measure_count = 0
 
-        self.insertion_config = kwargs.get('estimation_config', {'epsilon': 0.1, 'initialization': "epsilon",
-                                                                 'selector_temperature': 10})
+        self.insertion_config = kwargs.get('insertion_config', {'epsilon': 0.1, 'initialization': "epsilon",
+                                                                'selector_temperature': 10})
         self.estimation_config = kwargs.get('estimation_config', {'one_step_optimizer': gradient_decent_one_step})
         self.training_config = kwargs.get('training_config', {'training_steps': 100})
 
@@ -63,8 +65,9 @@ class VAns:
         """
         Module encapsulated, see insert.py
         """
-        new_ansatz = []
-        new_parameters = []
+        idi = IdInserter(n_qubits=self.n_qubits, coupling_set=self.coupling, **self.insertion_config)
+
+        new_ansatz, new_parameters = idi.insertion(ansatz, parameters)
 
         return new_ansatz, new_parameters
 

@@ -3,38 +3,8 @@ import numpy as np
 from VAns import single_qubit_block, double_qubit_block
 
 
-def insertion(ansatz, parameters, block_to_insert, insert_index):
-
-    new_ansatz = []
-    new_parameters = []
-    epsilon = 0.1
-    # block_to_insert, insertion_index = self.choose_block(ansatz)
-    for ind, gate in enumerate(ansatz):
-        """
-        go through the whole ansatz
-        ind is the index of gates 
-        """
-        par_count = 0
-        if ind == insert_index:
-            """add circuit"""
-            new_ansatz.append(block_to_insert)
-            """add parameters: for block single qubit is 3, double is 6"""
-            if len(block_to_insert) == 3:
-                new_parameters.append([np.random.choice([-1., 1.]) * epsilon for oo in range(3)])
-            else:
-                new_parameters.append([np.random.choice([-1., 1.]) * epsilon for oo in range(6)])
-        else:
-            new_ansatz.append(gate)
-            if gate[0] == 'rz' or gate[0] == 'rx':
-                """not new block then add original parameters to new_parameters"""
-                new_parameters.append(parameters[par_count])
-                par_count += 1
-
-    return new_ansatz, new_parameters
-
-
 class IdInserter:
-    def __init__(self, n_qubits=3, epsilon=0.1, initialization="epsilon", selector_temperature=10,coupling_set={}):
+    def __init__(self, n_qubits=3, epsilon=0.1, initialization="epsilon", selector_temperature=10, coupling_set={}):
         """
         Update:add coupling set
         epsilon: perturbation strength
@@ -49,9 +19,8 @@ class IdInserter:
         """
             coupling set
         """
-        self.coupling=coupling_set
+        self.coupling = coupling_set
 
-        #self.qubits = cirq.GridQubit.rect(1, n_qubits)
 
     """ function 1:(utils)count cnots"""
 
@@ -114,15 +83,15 @@ class IdInserter:
             gc = np.array(list(ngates.values()))[:, 1] + 1  #### gives the gate population for each qubit
             probs = np.exp(self.selector_temperature * (1 - gc / np.sum(gc))) / np.sum(
                 np.exp(self.selector_temperature * (1 - gc / np.sum(gc))))
-            flag=1
-            qubits_out=None
-            while(flag==1):
+            flag = 1
+            qubits_out = None
+            while (flag == 1):
                 qubits_ = np.random.choice(range(self.n_qubits), 2, p=probs, replace=False)
-                qubits=tuple(qubits_)
+                qubits = tuple(qubits_)
                 """try to find whether the random cnot is in the coupling set"""
                 if qubits in self.coupling:
-                    qubits_out=qubits
-                    flag=0
+                    qubits_out = qubits
+                    flag = 0
 
             return qubits_out
         else:
@@ -156,14 +125,41 @@ class IdInserter:
 
     def place_almost_identity(self, indexed_circuit, symbol_to_value):
         block_to_insert, insertion_index = self.choose_block(indexed_circuit)
-        new_ansatz, new_parameters = insertion(indexed_circuit, symbol_to_value, block_to_insert, insertion_index)
+        new_ansatz, new_parameters = insert(indexed_circuit, symbol_to_value, block_to_insert, insertion_index)
         return new_ansatz, new_parameters
 
-    def place_identities(self, indexed_circuit, symbol_to_value, rate_iids_per_step=1):
+    def insertion(self, indexed_circuit, symbol_to_value, rate_iids_per_step=1):
         ngates = np.random.exponential(scale=rate_iids_per_step)
         ngates = int(ngates + 1)
-        # print("Adding {}".format(ngates))
         M_ansatz, M_parameters = self.place_almost_identity(indexed_circuit, symbol_to_value)
         for ll in range(ngates - 1):
             M_ansatz, M_parameters = self.place_almost_identity(M_ansatz, M_parameters)
         return M_ansatz, M_parameters
+
+
+def insert(ansatz, parameters, block_to_insert, insert_index):
+    new_ansatz = []
+    new_parameters = []
+    epsilon = 0.1
+    # block_to_insert, insertion_index = self.choose_block(ansatz)
+    for ind, gate in enumerate(ansatz):
+        """
+        go through the whole ansatz
+        ind is the index of gates
+        """
+        par_count = 0
+        if ind == insert_index:
+            """add circuit"""
+            new_ansatz.append(block_to_insert)
+            """add parameters: for block single qubit is 3, double is 6"""
+            if len(block_to_insert) == 3:
+                new_parameters.append([np.random.choice([-1., 1.]) * epsilon for oo in range(3)])
+            else:
+                new_parameters.append([np.random.choice([-1., 1.]) * epsilon for oo in range(6)])
+        else:
+            new_ansatz.append(gate)
+            if gate[0] == 'rz' or gate[0] == 'rx':
+                """not new block then add original parameters to new_parameters"""
+                new_parameters.append(parameters[par_count])
+                par_count += 1
+    return new_ansatz, new_parameters
