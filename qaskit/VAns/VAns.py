@@ -34,8 +34,8 @@ class VAns:
         self.coupling = qha.get_coupling()  # 允许的CNOT集，例如：{(0,1), (1,2), ..., (n-2, n-1), (n-1, 0)}，单向。
         self.Hamiltonian = Hamiltonian
 
-        self.optimal_ansatz = None
-        self.optimal_parameters = None
+        self.optimal_ansatz = [('Ry', i) for i in range(self.n_qubits)]
+        self.optimal_parameters = [0.0 for _ in range(self.n_qubits)]
         self.optimal_cost = None
 
         self.detail_record = []

@@ -1,6 +1,12 @@
 import numpy as np
 
-from VAns import single_qubit_block, double_qubit_block
+def single_qubit_block(qb):
+    return [('rz', qb), ('rx', qb), ('rz', qb)]
+
+
+def double_qubit_block(c_qb, t_qb):
+    return [('cx', c_qb, t_qb), ('rz', c_qb), ('rx', t_qb), ('rx', c_qb), ('rz', t_qb), ('rz', c_qb), ('rx', t_qb),
+            ('cx', c_qb, t_qb)]
 
 
 class IdInserter:

@@ -33,4 +33,5 @@ if __name__ == '__main__':
     qha = QuantumHardwareArchitecture(qubit_num, coupling, gate_set)
 
     vans = VAns(qha, Hamiltonian)
+    vans.training()
 
