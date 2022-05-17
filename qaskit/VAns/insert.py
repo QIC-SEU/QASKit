@@ -52,28 +52,23 @@ class IdInserter:
     def gate_counter_on_qubits(self, indexed_circuit_1):
         index = []
         indexed_circuit = []
+        gatecounter=[]
         for i in indexed_circuit_1:
             index.append(i)
+
         for i in range(len(index)):
-            if index[i][0].lower() == 'cnot':
+            if index[i][0].lower() == 'cx':
                 indexed_circuit.append(index[i][1])
                 indexed_circuit.append(index[i][2])
             else:
                 indexed_circuit.append(index[i][1])
 
-        ngates = {k: [0, 0] for k in range(self.n_qubits)}
-        cnot_num, cnot_ind = self.count_cnots()
+        #ngates = {k: [0, 0] for k in range(self.n_qubits)}
+        #cnot_num, cnot_ind = self.count_cnots()
+        for i in range (self.n_qubits):
+            gatecounter.append(indexed_circuit.count(i))
 
-        for ind in indexed_circuit:
-            if ind < cnot_num:
-                control, target = cnot_ind[str(ind)]
-
-                ngates[control][1] += 1
-                ngates[target][1] += 1
-            else:
-                qind = (ind - cnot_num) % self.n_qubits
-                ngates[qind][0] += 1
-        return ngates
+        return gatecounter
 
     """function 3:choose where to insert the block(somewhere in the circuit)"""
 
@@ -99,7 +94,8 @@ class IdInserter:
         if ngates is None:
             ngates = {}
         if gate_type == "one-qubit":
-            gc = np.array(list(ngates.values()))[:, 0] + 1  #### gives the gate population for each qubit
+            #print('ngates is',ngates)
+            gc = ngates  #### gives the gate population for each qubit
             probs = np.exp(self.selector_temperature * (1 - gc / np.sum(gc))) / np.sum(
                 np.exp(self.selector_temperature * (1 - gc / np.sum(gc))))
             #print('p=',probs)
@@ -108,10 +104,9 @@ class IdInserter:
             return k
             #return np.random.choice(range(self.n_qubits), 1, p=probs)[0]
         elif gate_type == "two-qubit":
-            gc = np.array(list(ngates.values()))[:, 1] + 1  #### gives the gate population for each qubit
+            gc=ngates
             probs = np.exp(self.selector_temperature * (1 - gc / np.sum(gc))) / np.sum(
                 np.exp(self.selector_temperature * (1 - gc / np.sum(gc))))
-            #print('p=', probs)
             flag=1
             qubits_out=None
             while(flag==1):
@@ -136,7 +131,7 @@ class IdInserter:
         ngates = self.gate_counter_on_qubits(indexed_circuit)
         ### if no qubit is affected by a CNOT in the circuit... (careful, since this might be bias the search if problem is too easy)
         if np.count_nonzero(
-                np.array(list(self.gate_counter_on_qubits(indexed_circuit).values()))[:, 1] < 1) <= self.n_qubits:
+                np.array(list(self.gate_counter_on_qubits(indexed_circuit))) < 1) <= self.n_qubits:
             which_block = np.random.choice([0, 1], p=[.2, .8])
             insertion_index = self.where_to_insert(indexed_circuit)
         else:
@@ -215,6 +210,7 @@ def insert(ansatz1, parameters, block_to_insert, insert_index):
                 new_parameters.append(parameters[par_count])
                 par_count += 1
     return new_ansatz, new_parameters
+
 
 
 """
