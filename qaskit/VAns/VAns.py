@@ -34,7 +34,7 @@ class VAns:
         self.coupling = qha.get_coupling()  # 允许的CNOT集，例如：{(0,1), (1,2), ..., (n-2, n-1), (n-1, 0)}，单向。
         self.Hamiltonian = Hamiltonian
 
-        self.optimal_ansatz = [('Ry', i) for i in range(self.n_qubits)]
+        self.optimal_ansatz = [('Rx', i) for i in range(self.n_qubits)]
         self.optimal_parameters = [0.0 for _ in range(self.n_qubits)]
         self.optimal_cost = None
 
@@ -72,7 +72,15 @@ class VAns:
         return new_ansatz, new_parameters
 
     def simplification(self, ansatz, parameters):
-        return simplification(ansatz, parameters)
+        reformulated_ansatz = []
+        for tp in ansatz:
+            if tp[0].lower() == 'cx':
+                new_tp = (tp[0].lower(), tp[1], tp[2])
+                reformulated_ansatz.append(new_tp)
+            else:
+                new_tp = (tp[0].lower(), tp[1])
+                reformulated_ansatz.append(new_tp)
+        return simplification(reformulated_ansatz, parameters)
 
     def training(self):
         training_steps = self.training_config['training_steps']

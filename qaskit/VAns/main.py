@@ -3,6 +3,7 @@ from Hamiltonians import H2_Standard, H4_Standard, HF_Standard, Standard_to_Penn
 import argparse
 import numpy as np
 from VAns import VAns
+import random
 
 # parser = argparse.ArgumentParser("VAns")
 # parser.add_argument('--learning_rate', type=float, default=0.05, help='learning rate')
@@ -25,6 +26,7 @@ def get_Hamiltonian(hamil: str, bond):
 
 
 if __name__ == '__main__':
+    random.seed(0)
     # Hamiltonian = get_Hamiltonian(args.Hamiltonian, args.bond)
     Hamiltonian = Standard_to_Pennylane_Observables(H2_Standard, '0.7')
     qubit_num = Hamiltonian['qubit']
