@@ -43,14 +43,19 @@ class VAns:
 
         self.insertion_config = kwargs.get('insertion_config', {'epsilon': 0.1, 'initialization': "epsilon",
                                                                 'selector_temperature': 10})
-        self.estimation_config = kwargs.get('estimation_config', {'one_step_optimizer': gradient_decent_one_step})
-        self.training_config = kwargs.get('training_config', {'training_steps': 100})
+        self.estimation_config = kwargs.get('estimation_config',
+                                            {'one_step_optimizer': gradient_decent_one_step,
+                                             'learning_rate': 0.2,
+                                             'stop_threshold': 1E-10,
+                                             'print_flag': True})
+        self.training_config = kwargs.get('training_config', {'training_steps': 100, 'print_flag': True})
+
 
     def estimation(self, ansatz, parameters, **kwargs):
-        one_step_optimizer = kwargs['one_step_optimizer'] if kwargs.get('one_step_optimizer', None) is not None \
-            else self.estimation_config['one_step_optimizer']
+        if kwargs.get('one_step_optimizer', None) is None:
+            kwargs['one_step_optimizer'] = self.estimation_config['one_step_optimizer']
         Hamiltonian = kwargs['Hamiltonian'] if kwargs.get('Hamiltonian', None) is not None else self.Hamiltonian
-        result = optimal_cost_estimation(Hamiltonian, ansatz, parameters, one_step_optimizer, **self.estimation_config)
+        result = optimal_cost_estimation(Hamiltonian, ansatz, parameters, **self.estimation_config)
         record = result['detail']
 
         for piece in record:
@@ -58,7 +63,7 @@ class VAns:
             self.detail_record.append({'mea': self.cumulative_measure_count, 'cost': piece['cost']})
 
         cost = result['cost']
-        trained_parameters = result['record']
+        trained_parameters = result['parameters']
         return cost, trained_parameters
 
     def insertion(self, ansatz, parameters):
@@ -83,21 +88,42 @@ class VAns:
         return simplification(reformulated_ansatz, parameters)
 
     def training(self):
+        print_flag = self.training_config.get('print_flag', False)
         training_steps = self.training_config['training_steps']
-        for _ in range(training_steps):
+        for iteration in range(training_steps):
+            if print_flag:
+                print('Iteration: ' + str(iteration))
             accept = False
             while not accept:
-                new_ansatz, new_parameters = self.insertion(self.optimal_ansatz, self.optimal_parameters)
+                init_parameters = [0.0 for _ in range(len(self.optimal_parameters))]
+                new_ansatz, new_parameters = self.insertion(self.optimal_ansatz, init_parameters)
+                if print_flag:
+                    print(new_ansatz)
+                    print('parameter number: ' + str(len(new_parameters)))
 
                 new_ansatz, new_parameters = self.simplification(new_ansatz, new_parameters)
-
+                if print_flag:
+                    print(new_ansatz)
+                    print('parameter number: ' + str(len(new_parameters)))
                 new_cost, new_parameters = self.estimation(new_ansatz, new_parameters)
 
+                if print_flag:
+                    print('trail mea: ' + str(self.cumulative_measure_count))
+                    print('trail cost: ' + str(new_cost))
+                    print('optimal cost: ' + str(self.optimal_cost))
+
                 new_ansatz, new_parameters = self.simplification(new_ansatz, new_parameters)
+
+                if print_flag:
+                    print('simplified mea: ' + str(self.cumulative_measure_count))
+                    print('simplified cost: ' + str(new_cost))
+                    print('optimal cost: ' + str(self.optimal_cost))
 
                 cost_fn = objective_function_measurement(self.Hamiltonian, new_ansatz)
                 new_cost = cost_fn(new_parameters)
                 if is_accepted(self.optimal_cost, new_cost):
+                    if print_flag:
+                        print('accepted')
                     self.optimal_ansatz = new_ansatz
                     self.optimal_parameters = new_parameters
                     self.optimal_cost = new_cost

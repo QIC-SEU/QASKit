@@ -55,7 +55,7 @@ class IdInserter:
         for i in indexed_circuit_1:
             index.append(i)
         for i in range(len(index)):
-            if index[i][0] == 'cnot':
+            if index[i][0].lower() == 'cnot':
                 indexed_circuit.append(index[i][1])
                 indexed_circuit.append(index[i][2])
             else:
@@ -202,7 +202,9 @@ def insert(ansatz1, parameters, block_to_insert, insert_index):
                 else:
                     new_parameters+=([np.random.choice([-1., 1.]) * epsilon for oo in range(6)])
             new_ansatz.append(gate)
-            if gate[0] == 'rz' or gate[0] == 'rx':
+            k=str(gate[0])
+            k=k.lower()
+            if k == 'rz' or k == 'rx':
                 """not new block then add original parameters to new_parameters"""
                 new_parameters.append(parameters[par_count])
                 par_count += 1
@@ -213,11 +215,11 @@ def insert(ansatz1, parameters, block_to_insert, insert_index):
     testing....
 """
 
-#ansatz=[]
-#parameters=[]
-#idi = IdInserter(n_qubits=4, coupling_set={(0,1), (1,2)})
-#new_ansatz, new_parameters = idi.insertion(ansatz, parameters)
-#print('origin_ansatz is',ansatz)
-#print('origin_para is',parameters)
-#print('new_ansatz is',new_ansatz)
-#print('new para is',new_parameters)
+# ansatz=[('Rx',0),('Rx',1),('Rx',2),('Rx',3)]
+# parameters=[0.0,0.0,0.0,0.0]
+# idi = IdInserter(n_qubits=4, coupling_set={(0,1), (1,2)})
+# new_ansatz, new_parameters = idi.insertion(ansatz, parameters)
+# print('origin_ansatz is',ansatz)
+# print('origin_para is',parameters)
+# print('new_ansatz is',new_ansatz)
+# print('new para is',new_parameters)

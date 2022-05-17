@@ -179,7 +179,7 @@ def rule_1(ansatz):
                 i = i - 1
         i = i + 1
         Count = Count - 1
-    print('使用规则1次数:', len(ansatz) - len(new_ansatz))
+    # print('使用规则1次数:', len(ansatz) - len(new_ansatz))
     return new_ansatz
 
 
@@ -198,7 +198,7 @@ def rule_2(ansatz, parameters):
                 i = i - 1
         i = i + 1
         Count = Count - 1
-    print('使用规则2次数:', len(ansatz) - len(new_ansatz))
+    # print('使用规则2次数:', len(ansatz) - len(new_ansatz))
     return new_ansatz, new_parameters
 
 
@@ -219,7 +219,7 @@ def rule_3(ansatz):
                 i = i - 1
         i = i + 1
         Count = Count - 1
-    print('使用规则3次数:', len(ansatz) - len(new_ansatz))
+    # print('使用规则3次数:', len(ansatz) - len(new_ansatz))
     return new_ansatz
 
 
@@ -247,7 +247,7 @@ def rule_4(ansatz, parameters):
                 i = i - 1
         i = i + 1
         Count = Count - 1
-    print('使用规则4次数:', len(ansatz) - len(new_ansatz))
+    # print('使用规则4次数:', len(ansatz) - len(new_ansatz))
     return new_ansatz, new_parameters
 
 
@@ -307,7 +307,7 @@ def rule_5(ansatz, parameters):
                             Count = Count - 1
         Count = Count - 1
         i = i + 1
-    print('使用规则5次数:', len(ansatz) - len(new_ansatz))
+    # print('使用规则5次数:', len(ansatz) - len(new_ansatz))
     return new_ansatz, new_parameters
 
 

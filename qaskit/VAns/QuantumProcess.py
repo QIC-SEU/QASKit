@@ -315,12 +315,13 @@ def gradient_decent_one_step(grad, exp, exp_fun, parameters, **kwargs):
 
 
 def optimal_cost_estimation(Hamiltonian, circuit_in, parameters, one_step_optimizer, **kwargs):
+    print_flag = kwargs.get('print_flag', False)
     grad_fn = gradient_measurement(Hamiltonian, circuit_in,
                                    kwargs.get('encode', None), kwargs.get('encode_config', None))
     obj_fn = objective_function_measurement(Hamiltonian, circuit_in,
                                             kwargs.get('encode', None), kwargs.get('encode_config', None),
                                             kwargs.get('exact', False))
-    stop_threshold = kwargs.get('stop_threshold', 1E-3)
+    stop_threshold = kwargs.get('stop_threshold', 1E-10)
     iterations = kwargs.get('iterations', 500)
     reference_cost = kwargs.get('ref_cost', None)
 
@@ -334,13 +335,16 @@ def optimal_cost_estimation(Hamiltonian, circuit_in, parameters, one_step_optimi
     else:
         obj_val = obj_fn(par)
         mea_count += 1
-
+    if print_flag:
+        print('Iterative estimation start')
     for it in range(iterations):
         update = one_step_optimizer(grad, obj_val, obj_fn, par, **kwargs)
         mea_count += update['measurements']
         par = update['parameters']
         obj_val = update['cost']
-        record.append({'mea': mea_count, 'obj_val': obj_val})
+        record.append({'mea': mea_count, 'cost': obj_val})
+        if print_flag:
+            print('inner mea: ' + str(mea_count) + ', cost: ' + str(obj_val))
         kwargs['learning_rate'] = update.get('recommend_learning_rate', kwargs.get('learning_rate'))
         if update.get('learning_rate', 1) * np.sqrt(sum(np.power(par, 2))) / len(par) <= stop_threshold:
             break
