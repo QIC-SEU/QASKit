@@ -11,7 +11,7 @@ def double_qubit_block(c_qb, t_qb):
 
 
 class IdInserter:
-    def __init__(self, n_qubits=3, epsilon=0.1, initialization="epsilon", selector_temperature=10,coupling_set={(0,1), (1,2),(2,3)}):
+    def __init__(self, n_qubits=3, epsilon=0.1, initialization="epsilon", selector_temperature=5,coupling_set={(0,1), (1,2),(2,3)}):
         """
         Update:add coupling set
         epsilon: perturbation strength
@@ -83,7 +83,7 @@ class IdInserter:
         elif len(indexed_circuit)==0:
             insertion_index=0
         else:
-            insertion_index = np.squeeze(np.random.choice(range(self.n_qubits, len(indexed_circuit)), 1))
+            insertion_index = np.squeeze(np.random.choice(range(0, len(indexed_circuit)), 1))
         return insertion_index
 
     """function 4:choose target block"""
@@ -102,11 +102,16 @@ class IdInserter:
             gc = np.array(list(ngates.values()))[:, 0] + 1  #### gives the gate population for each qubit
             probs = np.exp(self.selector_temperature * (1 - gc / np.sum(gc))) / np.sum(
                 np.exp(self.selector_temperature * (1 - gc / np.sum(gc))))
-            return np.random.choice(range(self.n_qubits), 1, p=probs)[0]
+            #print('p=',probs)
+            k=np.random.choice(range(self.n_qubits), 1, p=probs)[0]
+            #print('choose',k)
+            return k
+            #return np.random.choice(range(self.n_qubits), 1, p=probs)[0]
         elif gate_type == "two-qubit":
             gc = np.array(list(ngates.values()))[:, 1] + 1  #### gives the gate population for each qubit
             probs = np.exp(self.selector_temperature * (1 - gc / np.sum(gc))) / np.sum(
                 np.exp(self.selector_temperature * (1 - gc / np.sum(gc))))
+            #print('p=', probs)
             flag=1
             qubits_out=None
             while(flag==1):
@@ -116,6 +121,7 @@ class IdInserter:
                 if qubits in self.coupling:
                     qubits_out=qubits
                     flag=0
+                #print('choose is ',qubits_out)
 
             return qubits_out
         else:
@@ -215,11 +221,11 @@ def insert(ansatz1, parameters, block_to_insert, insert_index):
     testing....
 """
 
-# ansatz=[('Rx',0),('Rx',1),('Rx',2),('Rx',3)]
-# parameters=[0.0,0.0,0.0,0.0]
-# idi = IdInserter(n_qubits=4, coupling_set={(0,1), (1,2)})
-# new_ansatz, new_parameters = idi.insertion(ansatz, parameters)
-# print('origin_ansatz is',ansatz)
-# print('origin_para is',parameters)
-# print('new_ansatz is',new_ansatz)
-# print('new para is',new_parameters)
+#ansatz=[('rx',1)]
+#parameters=[0.0]
+#idi = IdInserter(n_qubits=4, coupling_set={(0,1),(1,2),(2,3),(3,0)})
+#new_ansatz, new_parameters = idi.insertion(ansatz, parameters)
+#print('origin_ansatz is',ansatz)
+#print('origin_para is',parameters)
+#print('new_ansatz is',new_ansatz)
+#print('new para is',new_parameters)
