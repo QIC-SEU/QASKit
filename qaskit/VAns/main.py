@@ -5,6 +5,8 @@ import numpy as np
 from VAns import VAns
 import random
 from QuantumProcess import quantum_processor_launch, quantum_processor_terminate, set_noise_model
+
+
 # parser = argparse.ArgumentParser("VAns")
 # parser.add_argument('--learning_rate', type=float, default=0.05, help='learning rate')
 # parser.add_argument('--noisy', type=bool, default=False, help='use noise')
@@ -28,7 +30,8 @@ def get_Hamiltonian(hamil: str, bond):
 if __name__ == '__main__':
     random.seed(0)
     np.random.seed(0)
-    quantum_processor_launch(wires=4, shots=10000, proc_num=8)
+    set_noise_model({'depolarizing': {'single': 0.001, 'multi': 0.01}})
+    quantum_processor_launch(wires=4, shots=10000, proc_num=14)
     # Hamiltonian = get_Hamiltonian(args.Hamiltonian, args.bond)
     Hamiltonian = Standard_to_Pennylane_Observables(H2_Standard, '0.7')
     qubit_num = Hamiltonian['qubit']
@@ -38,4 +41,3 @@ if __name__ == '__main__':
     vans = VAns(qha, Hamiltonian)
     vans.training()
     quantum_processor_terminate()
-

@@ -48,7 +48,7 @@ class VAns:
                                              'learning_rate': 0.2,
                                              'stop_threshold': 1E-10,
                                              'print_flag': True})
-        self.training_config = kwargs.get('training_config', {'training_steps': 100, 'print_flag': True})
+        self.training_config = kwargs.get('training_config', {'training_steps': 100, 'stable_threshold': 25, 'print_flag': True})
 
 
     def estimation(self, ansatz, parameters, **kwargs):
@@ -59,9 +59,8 @@ class VAns:
         record = result['detail']
 
         for piece in record:
-            self.cumulative_measure_count += piece['mea']
-            self.detail_record.append({'mea': self.cumulative_measure_count, 'cost': piece['cost']})
-
+            self.detail_record.append({'mea': self.cumulative_measure_count + piece['mea'], 'cost': piece['cost']})
+        self.cumulative_measure_count += record[-1]['mea']
         cost = result['cost']
         trained_parameters = result['parameters']
         return cost, trained_parameters
@@ -88,12 +87,15 @@ class VAns:
         return simplification(reformulated_ansatz, parameters)
 
     def training(self):
+        stable_threshold = self.training_config.get('stable_threshold', 25)
         print_flag = self.training_config.get('print_flag', False)
         training_steps = self.training_config['training_steps']
         for iteration in range(training_steps):
             if print_flag:
                 print('Iteration: ' + str(iteration))
             accept = False
+            unaccepted_count = 0
+            termination_flag = False
             while not accept:
                 init_parameters = [0.0 for _ in range(len(self.optimal_parameters))]
                 new_ansatz, new_parameters = self.insertion(self.optimal_ansatz, init_parameters)
@@ -128,6 +130,15 @@ class VAns:
                     self.optimal_parameters = new_parameters
                     self.optimal_cost = new_cost
                     accept = True
+                else:
+                    unaccepted_count += 1
+                    print('without improvement: ' + str(unaccepted_count))
+                    if unaccepted_count >= stable_threshold:
+                        termination_flag = True
+                        break
+            if termination_flag:
+                break
+        return self.optimal_ansatz, self.optimal_parameters, self.optimal_cost
 
     def get_training_detail(self):
         return self.detail_record
