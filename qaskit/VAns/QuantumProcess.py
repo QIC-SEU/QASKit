@@ -321,8 +321,8 @@ def optimal_cost_estimation(Hamiltonian, circuit_in, parameters, one_step_optimi
     obj_fn = objective_function_measurement(Hamiltonian, circuit_in,
                                             kwargs.get('encode', None), kwargs.get('encode_config', None),
                                             kwargs.get('exact', False))
-    stop_threshold = kwargs.get('stop_threshold', 1E-10)
-    iterations = kwargs.get('iterations', 500)
+    stop_threshold = kwargs.get('stop_threshold', 1E-6)
+    iterations = kwargs.get('iterations', 100)
     reference_cost = kwargs.get('ref_cost', None)
 
     par = parameters

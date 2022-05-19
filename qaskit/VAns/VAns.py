@@ -4,7 +4,7 @@ from QuantumProcess import objective_function_measurement, gradient_measurement,
     optimal_cost_estimation
 import math
 from QuantumHardwareArchitecture import QuantumHardwareArchitecture
-from Simplification import simplification
+from Simplification import simplification, Search_parameters
 from insert import IdInserter
 
 
@@ -43,13 +43,17 @@ class VAns:
 
         self.insertion_config = kwargs.get('insertion_config', {'epsilon': 0.1, 'initialization': "epsilon",
                                                                 'selector_temperature': 10})
+        self.simplification_config = kwargs.get('simplification_config',
+                                                {'with_improvement_judgement': True, 'error_factor': 0.01})
         self.estimation_config = kwargs.get('estimation_config',
                                             {'one_step_optimizer': gradient_decent_one_step,
                                              'learning_rate': 0.2,
-                                             'stop_threshold': 1E-10,
+                                             'stop_threshold': 1E-8,
                                              'print_flag': True})
-        self.training_config = kwargs.get('training_config', {'training_steps': 100, 'stable_threshold': 25, 'print_flag': True})
-
+        self.training_config = kwargs.get('training_config',
+                                          {'training_steps': 100,
+                                           'stable_threshold': 10,
+                                           'print_flag': True})
 
     def estimation(self, ansatz, parameters, **kwargs):
         if kwargs.get('one_step_optimizer', None) is None:
@@ -75,7 +79,15 @@ class VAns:
 
         return new_ansatz, new_parameters
 
-    def simplification(self, ansatz, parameters):
+    def simplification(self, ansatz, parameters, **kwargs):
+        with_improvement_judgement = kwargs.get('with_improvement_judgement',
+                                                self.simplification_config.get('with_improvement_judgement',
+                                                                               False))
+        error_factor = 0
+        if with_improvement_judgement:
+            error_factor = kwargs.get('error_factor',
+                                      self.simplification_config.get('error_factor',
+                                                                     0.001))
         reformulated_ansatz = []
         for tp in ansatz:
             if tp[0].lower() == 'cx':
@@ -84,7 +96,35 @@ class VAns:
             else:
                 new_tp = (tp[0].lower(), tp[1])
                 reformulated_ansatz.append(new_tp)
-        return simplification(reformulated_ansatz, parameters)
+        if with_improvement_judgement:
+            ans, par = simplification(reformulated_ansatz, parameters)
+            count = 0
+            ref_cost, ref_parameters = self.estimation(ans, par)
+            refined_ansatz = list(ans)
+            refined_parameters = list(par)
+
+            for i in range(0, len(ansatz), 1):
+                tmp_ansatz = list(refined_ansatz)
+                tmp_parameters = list(refined_parameters)
+                if count >= len(tmp_parameters):
+                    break
+                if tmp_ansatz[count][0] == 'rx' or tmp_ansatz[count][0] == 'rz':
+                    tmp_parameters.pop(Search_parameters(tmp_ansatz, count))
+                    tmp_ansatz.pop(count)
+                else:
+                    tmp_ansatz.pop(count)
+                tmp_cost, tmp_parameters = self.estimation(tmp_ansatz, tmp_parameters)
+                if tmp_cost - ref_cost <= error_factor:
+                    if tmp_cost < ref_cost:
+                        ref_cost = tmp_cost
+                    refined_ansatz = list(tmp_ansatz)
+                    refined_parameters = list(tmp_parameters)
+                    count = count - 1
+                count = count + 1
+
+            return simplification(refined_ansatz, refined_parameters)
+        else:
+            return simplification(reformulated_ansatz, parameters)
 
     def training(self):
         stable_threshold = self.training_config.get('stable_threshold', 25)
