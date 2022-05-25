@@ -21,19 +21,30 @@ class ParameterPool(Method):
                 if layer[0][i] != 'I':
                     n_params += 1
             par = [0.0 for _ in range(n_params)]
+            self.parameter_pool[str(layer)] = list(par)
         return par
 
     def __call__(self, circuit_with_layer):
         parameters = []
-        for layer in range(circuit_with_layer):
+        for layer in circuit_with_layer:
             parameters += self.get_layer_parameters(layer)
         return parameters
 
     def update(self, parameters, circuit_with_layer):
         param_count = 0
-        for layer in range(circuit_with_layer):
+        for layer in circuit_with_layer:
             dropped_par = self.get_layer_parameters(layer)
-            self.parameter_pool[str(layer)] = parameters[param_count:param_count+dropped_par]
-            param_count += dropped_par
+            self.parameter_pool[str(layer)] = parameters[param_count:param_count+len(dropped_par)]
+            param_count += len(dropped_par)
 
 
+def TEST_ParameterPool():
+    basic = Basic(4, [(0, 1), (1, 2), (2, 3), (3, 0)], 3)
+    pp = ParameterPool(basic)
+    circ = [[['RZ', 'I', 'I', 'RY'], [(0, 1)]], [['RZ', 'I', 'RZ', 'RY'], [(1, 2)]]]
+    par = pp(circ)
+    print(par)
+    par[0] = 100
+    pp.update(par, circ)
+    print(pp(circ))
+    print(pp.parameter_pool)
