@@ -2,3 +2,4 @@
 *.xml
 qaskit/VAns/.idea/VAns.iml
 *.pyc
+*.iml
