@@ -17,6 +17,11 @@ class ProcCircuit(Method):
         return circuit
 
     def __call__(self, circuit_with_layer):
+        """
+        Convert the layer represented circuit into the QuantumProcess adapted format.
+        :param circuit_with_layer: a list of layers.
+        :return: QuantumProcess adapted circuit
+        """
         proc_circuit = []
         for layer in circuit_with_layer:
             proc_circuit += self.circuit_from_single_layer(layer)

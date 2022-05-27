@@ -1,6 +1,5 @@
 from Basic import Basic
 from Method import Method
-import copy
 import itertools
 
 
@@ -14,11 +13,29 @@ class OperationPool(Method):
         self.operation_pool = list(itertools.product(su_space, CNOT_space))
 
     def __call__(self, layer_id):
+        """
+        Get a layer from the operation identifier.
+        :param layer_id: operation identifier of a layer.
+        :return: a layer represented by a structured list [single_qubit_layer, cx_layer], where single_qubit_layer and
+        cx_layer are lists.
+        """
         layer = [list(self.operation_pool[layer_id][0]), list(self.operation_pool[layer_id][1])]
         return layer
 
     def __len__(self):
         return len(self.operation_pool)
+
+    def circuit_from_id_list(self, id_list):
+        """
+        Get a circuit from a list of operation identifiers.
+        :param id_list: list of operation identifiers
+        :return: the circuit represented by a list of layers.
+        """
+
+        circuit = []
+        for lay_id in id_list:
+            circuit += self(lay_id)
+        return circuit
 
 
 def TEST_OperationPool():
@@ -28,3 +45,4 @@ def TEST_OperationPool():
     print(len(ss.operation_pool))
     print(ss.operation_pool)
     print(ss(0))
+    print(ss.circuit_from_id_list([0, 1, 2]))
