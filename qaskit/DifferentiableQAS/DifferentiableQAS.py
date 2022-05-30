@@ -17,7 +17,7 @@ class DifferentiableQAS:
         self.ParameterPool = ParameterPool(self.basic)
         self.AnsatzSampling = AnsatzSampling(self.basic, len(self.OperationPool))
         self.ProbModUpdate = ProbModUpdate(self.basic)
-        self.alpha = [0.0 for _ in range(len(self.OperationPool))]
+        self.alpha = [[0.0 for _ in range(len(self.OperationPool))] for i in range(n_layers)]
         self.learning_rate = learning_rate
 
     def training(self, n_samples, iterations):
@@ -68,6 +68,7 @@ class DifferentiableQAS:
                 self.ParameterPool.update(par, circuit)
 
             # Update alpha the parameters of probabilistic model
+            self.alpha = self.ProbModUpdate(self.alpha, sampled_id_lists, costs, self.learning_rate)
 
             # Get current best circuit
             current_best_id_list = self.AnsatzSampling.greedy(self.alpha)

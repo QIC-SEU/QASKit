@@ -34,7 +34,7 @@ class OperationPool(Method):
 
         circuit = []
         for lay_id in id_list:
-            circuit += self(lay_id)
+            circuit.append(self(lay_id))
         return circuit
 
 
