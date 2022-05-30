@@ -1,6 +1,7 @@
 from Basic import Basic
 from Method import Method
 import copy
+import numpy as np
 
 
 class ParameterPool(Method):
@@ -20,7 +21,7 @@ class ParameterPool(Method):
             for i in range(self.n_qubits):
                 if layer[0][i] != 'I':
                     n_params += 1
-            par = [0.0 for _ in range(n_params)]
+            par = [np.random.uniform(-np.pi, np.pi) for _ in range(n_params)]
             self.parameter_pool[str(layer)] = list(par)
         return par
 

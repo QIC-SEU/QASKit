@@ -4,18 +4,22 @@ from Basic import Basic
 from Method import Method
 
 
-def softmax(j, alphai):
-    # softmax categorical probability
+def sofsum(alpha):
     sum1 = 0
-    for k in range(len(alphai)):
-        sum1 = sum1 + np.exp(alphai[k])
+    for i in range(len(alpha)):
+        for j in range(len(alpha[i])):
+            sum1 = sum1 + np.exp(alpha[i][j])
+    return sum1
+
+def softmax(j, alphai,sum1):
+    # softmax categorical probability
     return np.exp(alphai[j]) / sum1
 
 
-def cal_pro(alpha, id_listjm):
+def cal_pro(alpha, id_listjm,sum1):
     prod = 1
     for i in range(len(alpha)):
-        prod = prod * softmax(id_listjm, alpha[i])
+        prod=prod*softmax(id_listjm,alpha[i],sum1)
     return prod
 
 
@@ -33,13 +37,15 @@ def gradient(alpha, id_lists, costs):
     id_list[layer]: id_list[i]<=c-1
     cost[i]:
     """
-    sum1 = 0
-    grad = []
+    grad = [[0.0 for _ in range(len(alpha[0]))] for i in range(len(alpha))]
+    sum1=sofsum(alpha)
+
     for i in range(len(alpha)):
         for j in range(len(alpha[i])):
-            ln = -cal_pro(alpha, id_lists[i]) + delta(id_lists[i], j)
-            grad[i][j] = ln * costs[i]
-            sum1 += ln * costs[i]
+            for k in range(len(id_lists)):
+                ln = -cal_pro(alpha, id_lists[k][i],sum1) + delta(id_lists[k][i], j)
+                grad[i][j] += ln * costs[k]
+
     '''
     for i in range(len(alpha)):
         for j in range(len(alpha[i])): 

@@ -5,12 +5,30 @@ import itertools
 
 class OperationPool(Method):
     def __init__(self, basic: Basic):
+        # super().__init__(basic)
+        # valid_su = ['I', 'RY', 'RZ']
+        # su_space = list(itertools.product(valid_su, repeat=self.n_qubits))
+        # CNOT_space = [[y for y in CNOTs if y is not None] for CNOTs in
+        #               list(itertools.product(*([x, None] for x in list(self.coupling))))]
+        # self.operation_pool = list(itertools.product(su_space, CNOT_space))
         super().__init__(basic)
-        valid_su = ['I', 'RY', 'RZ']
-        su_space = list(itertools.product(valid_su, repeat=self.n_qubits))
-        CNOT_space = [[y for y in CNOTs if y is not None] for CNOTs in
-                      list(itertools.product(*([x, None] for x in list(self.coupling))))]
-        self.operation_pool = list(itertools.product(su_space, CNOT_space))
+        # self.operation_pool = [[['I', 'I', 'I', 'I'], []], [['RY', 'RY', 'I', 'I'], [(0, 1)]], [['I', 'RY', 'RY', 'I'], [(1, 2)]],
+        #                        [['I', 'I', 'RY', 'RY'], [(2, 3)]], [['RY', 'I', 'I', 'RY'], [(3, 0)]],
+        #                        [['RZ', 'I', 'I', 'I'], []], [['I', 'RZ', 'I', 'I'], []],
+        #                        [['I', 'I', 'RZ', 'I'], []], [['I', 'I', 'I', 'RZ'], []]]
+        self.operation_pool = [[['I' for _ in range(self.n_qubits)], []]]
+        for conn in self.coupling:
+            op = [['I' for _ in range(self.n_qubits)], [conn]]
+            op[0][conn[0]] = 'RY'
+            op[0][conn[1]] = 'RY'
+            self.operation_pool.append(op)
+        for q in range(self.n_qubits):
+            op = [['I' for _ in range(self.n_qubits)], []]
+            op[0][q] = 'RZ'
+            self.operation_pool.append(op)
+
+
+
 
     def __call__(self, layer_id):
         """
