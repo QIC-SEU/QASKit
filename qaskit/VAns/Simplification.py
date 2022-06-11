@@ -202,7 +202,7 @@ def rule_2(ansatz, parameters):
     return new_ansatz, new_parameters
 
 
-# 删除两个重复的CNOT门中前面一个
+# 删除两个重复的CNOT门
 def rule_3(ansatz):
     '''
     :param ansatz: 输入的量子线路结构，列表格式; Example: [('rx', 0), ('rz', 1), ('cx', 0, 1)];
@@ -215,8 +215,10 @@ def rule_3(ansatz):
         if new_ansatz[i][0] == 'cx':
             Control_Bit, Controlled_Bit, Quantum_Gate_Marking = neighbor(new_ansatz, i)
             if Control_Bit[1] == Controlled_Bit[1] and Control_Bit[1] != -1:
+                new_ansatz.pop(Control_Bit[1])
                 new_ansatz.pop(i)
                 i = i - 1
+                Count = Count - 1
         i = i + 1
         Count = Count - 1
     # print('使用规则3次数:', len(ansatz) - len(new_ansatz))
